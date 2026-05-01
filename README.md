@@ -1,6 +1,12 @@
 # df-ammo-prices
 
-三角洲行动（Delta Force）弹药市场价格数据 —— 自动从 [orzice.com](https://orzice.com) 抓取。
+三角洲行动（Delta Force）弹药市场价格数据 + **在线估价 Agent** —— 自动从 [orzice.com](https://orzice.com) 抓取。
+
+## 在线版
+
+打开 → **https://summy00.github.io/df-ammo-prices/agent.html**
+
+填 API Key + Base URL + 模型，粘截图，点计算。详见页面里的输入框。
 
 ## 数据
 
