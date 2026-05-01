@@ -647,6 +647,24 @@ main {
     return { raw, toolInput, cacheNote };
   }
 
+  // 已知口径前缀（按长度降序避免误匹配 ".50 AE" 包含 ".5"）
+  const CALIBER_PREFIXES = [
+    "12.7x55mm", "5.45x39mm", "5.56x45mm", "5.7x28mm", "5.8x42mm",
+    "4.6x30mm", "6.8x51mm", "7.62x39mm", "7.62x51mm", "7.62x54R",
+    "9x19mm", "9x39mm",
+    "12 Gauge", "45-70 Govt",
+    ".300BLK", ".357 Magnum", ".45 ACP", ".50 AE",
+    "玻纤", "碳纤维",
+  ].sort((a, b) => b.length - a.length);
+
+  function extractCaliber(name) {
+    if (!name) return "";
+    for (const c of CALIBER_PREFIXES) {
+      if (name.includes(c)) return c;
+    }
+    return name.split(/\s/)[0];
+  }
+
   function pickItem(catalog, detectedCaliber, detectedGrade) {
     const cal = (detectedCaliber || "").toLowerCase().trim();
     if (!cal) return null;
@@ -690,7 +708,24 @@ main {
       const id = parseInt(select.value, 10);
       const item = state.catalogById.get(id);
       row.matched = item || null;
-      // 局部刷新即可，不必整表重渲染
+      row.detectedCaliber = item ? extractCaliber(item.name) : row.detectedCaliber;
+
+      // 联动：仅当总共 2 行时，把口径同步到另一行（按另一行等级取最低）
+      if (state.rows.length === 2 && item) {
+        const otherRow = state.rows.find((r) => r !== row);
+        if (otherRow) {
+          const cal = extractCaliber(item.name);
+          const newMatched = pickItem(state.catalog, cal, otherRow.detectedGrade);
+          if (newMatched) {
+            otherRow.matched = newMatched;
+            otherRow.detectedCaliber = cal;
+          }
+        }
+        renderResults(); // 另一行也变了，整表重渲染
+        return;
+      }
+
+      // 单行 / 3+ 行：只刷新本行
       const priceCell = tr?.querySelector("td:nth-child(4)");
       const subCell = tr?.querySelector(".subtotal");
       if (priceCell) priceCell.textContent = row.matched ? priceFormatter.format(row.matched.current_price) : "—";
